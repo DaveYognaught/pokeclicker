@@ -15,67 +15,110 @@ class Mine {
     private static loadingNewLayer = true;
 
     public static loadMine() {
-        const tmpGrid = [];
-        const tmpRewardGrid = [];
-        Mine.rewardNumbers = [];
-        Mine.itemsBuried(0);
-        Mine.surveyResult(null);
-        for (let i = 0; i < App.game.underground.getNewYLayer(); i++) {
-            const row = [];
-            const rewardRow = [];
-            for (let j = 0; j < Underground.sizeX; j++) {
-                row.push(ko.observable(Math.min(5, Math.max(1, Math.floor(Math.random() * 2 + Math.random() * 3) + 1))));
-                rewardRow.push(0);
+
+        var t0 = performance.now();
+        let one_mined = 0;
+        let two_mined = 0;
+        let three_mined = 0;
+        let four_mined = 0;
+        let five_mined = 0;
+        let six_mined = 0;
+        let seven_mined = 0;
+        let eight_mined = 0;
+        let MaxLayers = 20000;
+        for (let g = 0; g < MaxLayers; g++) {
+
+            const tmpGrid = [];
+            const tmpRewardGrid = [];
+            Mine.rewardNumbers = [];
+            Mine.itemsBuried(0);
+            Mine.surveyResult(null);
+            for (let i = 0; i < App.game.underground.getNewYLayer(); i++) {
+                const row = [];
+                const rewardRow = [];
+                for (let j = 0; j < Underground.sizeX; j++) {
+                    row.push(ko.observable(Math.min(5, Math.max(1, Math.floor(Math.random() * 2 + Math.random() * 3) + 1))));
+                    rewardRow.push(0);
+                }
+                tmpGrid.push(row);
+                tmpRewardGrid.push(rewardRow);
             }
-            tmpGrid.push(row);
-            tmpRewardGrid.push(rewardRow);
-        }
-        Mine.grid = tmpGrid;
-        Mine.rewardGrid = tmpRewardGrid;
+            Mine.grid = tmpGrid;
+            Mine.rewardGrid = tmpRewardGrid;
 
-        let Diff = 0;
-        let Added = 0;
-        for (let i = 0; i < App.game.underground.getMaxItems(); i++) {
-            const item = UndergroundItem.getRandomItem();
-            const x = Mine.getRandomCoord(Underground.sizeX, item.space[0].length);
-            const y = Mine.getRandomCoord(App.game.underground.getNewYLayer(), item.space.length);
-            const res = Mine.canAddReward(x, y, item);
-            if (res) {
-                Mine.addReward(x, y, item);
-                Added = Added + 1;
+            let Diff = 0;
+            let Added = 0;
+            for (let i = 0; i < App.game.underground.getMaxItems(); i++) {
+                const item = UndergroundItem.getRandomItem();
+                const x = Mine.getRandomCoord(Underground.sizeX, item.space[0].length);
+                const y = Mine.getRandomCoord(App.game.underground.getNewYLayer(), item.space.length);
+                const res = Mine.canAddReward(x, y, item);
+                if (res) {
+                    Mine.addReward(x, y, item);
+                    Added = Added + 1;
+                }
+            }
+
+            if (App.game.underground.getMaxItems() < App.game.underground.getMinItems()) {
+                Diff = App.game.underground.getMinItems() - App.game.underground.getMaxItems();
+                //Late-Game players might do some cheesy shit and upgrade min to be above their max. This makes sure it deducts the difference.
+            }
+            for (Added; Added < App.game.underground.getMinItems() - Diff;) {
+                const item = UndergroundItem.getRandomItem();
+                const x = Mine.getRandomCoord(Underground.sizeX, item.space[0].length);
+                const y = Mine.getRandomCoord(App.game.underground.getNewYLayer(), item.space.length);
+                const res = Mine.canAddReward(x, y, item);
+                if (res) {
+                    Mine.addReward(x, y, item);
+                    Added = Added + 1;
+                    //This should loop until it's added.
+                }
+            }
+
+            if (Added == 1) {
+                one_mined = one_mined + 1;
+            } else if (Added == 2) {
+                two_mined = two_mined + 1;
+            } else if (Added == 3) {
+                three_mined = three_mined + 1;
+            } else if (Added == 4) {
+                four_mined = four_mined + 1;
+            } else if (Added == 5) {
+                five_mined = five_mined + 1;
+            } else if (Added == 6) {
+                six_mined = six_mined + 1;
+            } else if (Added == 7) {
+                seven_mined = seven_mined + 1;
+            } else if (Added == 8) {
+                eight_mined = eight_mined + 1;
+            }
+
+            Mine.loadingNewLayer = false;
+            Mine.itemsFound(0);
+
+            Underground.showMine();
+
+            //Check if Explosive_Charge is equipped.
+            if (App.game.oakItems.isActive(OakItems.OakItem.Explosive_Charge)) {
+                const tiles = App.game.oakItems.calculateBonus(OakItems.OakItem.Explosive_Charge);
+                for (let i = 1; i < tiles; i++) {
+                    const x = GameConstants.randomIntBetween(0, App.game.underground.getNewYLayer() - 1);
+                    const y = GameConstants.randomIntBetween(0, Underground.sizeX - 1);
+                    this.breakTile(x, y, 1);
+                }
             }
         }
-
-        if (App.game.underground.getMaxItems() < App.game.underground.getMinItems()) {
-            Diff = App.game.underground.getMinItems() - App.game.underground.getMaxItems();
-            //Late-Game players might do some cheesy shit and upgrade min to be above their max. This makes sure it deducts the difference.
-        }
-        for (Added; Added < App.game.underground.getMinItems() - Diff;) {
-            const item = UndergroundItem.getRandomItem();
-            const x = Mine.getRandomCoord(Underground.sizeX, item.space[0].length);
-            const y = Mine.getRandomCoord(App.game.underground.getNewYLayer(), item.space.length);
-            const res = Mine.canAddReward(x, y, item);
-            if (res) {
-                Mine.addReward(x, y, item);
-                Added = Added + 1;
-                //This should loop until it's added.
-            }
-        }
-
-        Mine.loadingNewLayer = false;
-        Mine.itemsFound(0);
-
-        Underground.showMine();
-
-        //Check if Explosive_Charge is equipped.
-        if (App.game.oakItems.isActive(OakItems.OakItem.Explosive_Charge)) {
-            const tiles = App.game.oakItems.calculateBonus(OakItems.OakItem.Explosive_Charge);
-            for (let i = 1; i < tiles; i++) {
-                const x = GameConstants.randomIntBetween(0, App.game.underground.getNewYLayer() - 1);
-                const y = GameConstants.randomIntBetween(0, Underground.sizeX - 1);
-                this.breakTile(x, y, 1);
-            }
-        }
+        var t1 = performance.now();
+        console.log('Number Of New Layers Generated = ', MaxLayers);
+        console.log("To do this operation it took " + (t1 - t0) + " milliseconds.")
+        console.log('Number Of 1 Items = ', one_mined);
+        console.log('Number Of 2 Items = ', two_mined);
+        console.log('Number Of 3 Items = ', three_mined);
+        console.log('Number Of 4 Items = ', four_mined);
+        console.log('Number Of 5 Items = ', five_mined);
+        console.log('Number Of 6 Items = ', six_mined);
+        console.log('Number Of 7 Items = ', seven_mined);
+        console.log('Number Of 8 Items = ', eight_mined);
     }
 
     private static getRandomCoord(max: number, size: number): number {
